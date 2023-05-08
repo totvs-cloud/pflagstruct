@@ -47,7 +47,7 @@ func NewCommand() (*cobra.Command, error) {
 	cmd.Flags().StringVar(&directory, directoryFlagName, "", "Specifies the path where the tool will search for the source file containing the struct definition")
 	cmd.Flags().StringVar(&structName, structNameFlagName, "", "Specifies the name of the struct that will be generated in the code. This flag is required.")
 	cmd.Flags().StringVar(&destination, destinationFlagName, "", "Specifies the file name and path where the generated code will be saved. This flag is required.")
-	cmd.Flags().BoolVar(&debug, destinationFlagName, false, "Enables debug mode, which will print additional information during the code generation process to help with troubleshooting. If this flag is not set, the tool will run in normal mode without additional debug information.")
+	cmd.Flags().BoolVar(&debug, debugFlagName, false, "Enables debug mode, which will print additional information during the code generation process to help with troubleshooting. If this flag is not set, the tool will run in normal mode without additional debug information.")
 
 	if err := cmd.MarkFlagRequired(directoryFlagName); err != nil {
 		return nil, errors.WithStack(err)
