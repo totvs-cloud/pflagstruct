@@ -15,6 +15,7 @@ type Module struct {
 	file      *modfile.File
 }
 
+// newModule returns a new instance of the Module struct with the go.mod file located in the given directory.
 func newModule(directory string) (*Module, error) {
 	directory, err := dir.AbsolutePath(directory)
 	if err != nil {
@@ -37,6 +38,7 @@ func newModule(directory string) (*Module, error) {
 	}, nil
 }
 
+// Name returns the name of the module, or an error if it cannot be determined.
 func (m *Module) Name() (string, error) {
 	mod := m.file.Module
 	if mod == nil {
@@ -46,10 +48,12 @@ func (m *Module) Name() (string, error) {
 	return mod.Mod.Path, nil
 }
 
+// Directory returns the directory containing the go.mod file for the module.
 func (m *Module) Directory() string {
 	return m.directory
 }
 
+// Dependencies returns a list of dependencies for the module, or an error if they cannot be determined.
 func (m *Module) Dependencies() ([]*projscan.Dependency, error) {
 	gopath, ok := os.LookupEnv("GOPATH")
 	if !ok {

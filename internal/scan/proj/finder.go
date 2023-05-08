@@ -14,10 +14,13 @@ type Finder struct {
 	scanner *syntree.Scanner
 }
 
+// NewFinder returns a new instance of the Finder struct with a given scanner.
 func NewFinder(scanner *syntree.Scanner) *Finder {
 	return &Finder{scanner: scanner}
 }
 
+// FindProjectByDirectory returns a projscan.Project object representing the project in the given directory,
+// or an error if the project cannot be found.
 func (s *Finder) FindProjectByDirectory(directory string) (*projscan.Project, error) {
 	mod, err := newModule(directory)
 	if err != nil {
@@ -41,11 +44,15 @@ func (s *Finder) FindProjectByDirectory(directory string) (*projscan.Project, er
 	}, nil
 }
 
+// FindProjectByPackage returns a projscan.Project object representing the project that contains the given package,
+// or an error if the project cannot be found.
 func (s *Finder) FindProjectByPackage(pkg *projscan.Package) (*projscan.Project, error) {
 	directory := pkg.Directory
 	return s.FindProjectByDirectory(directory)
 }
 
+// readGoModFile reads the go.mod file at the given path and returns a modfile.File object,
+// or an error if the file cannot be read.
 func readGoModFile(path string) (*modfile.File, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -60,6 +67,8 @@ func readGoModFile(path string) (*modfile.File, error) {
 	return file, nil
 }
 
+// findGoModFilePath finds the path to the go.mod file in the given directory or its parent directories,
+// or an error if the file cannot be found.
 func findGoModFilePath(directory string) (string, error) {
 	filename := "go.mod"
 
