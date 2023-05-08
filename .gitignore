@@ -1,0 +1,29 @@
+### Eclipse ###
+.settings/
+bin/
+tmp/
+*.bak
+*.swp
+*.tmp
+*~.nib
+.loadpath
+.metadata
+.recommenders
+local.properties
+
+### GoLand ###
+# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
+.idea/
+out/
+*.iml
+*.ipr
+
+### VisualStudioCode ###
+.history/
+!.vscode/*.code-snippets
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+*.vsix
+.vscode/*
