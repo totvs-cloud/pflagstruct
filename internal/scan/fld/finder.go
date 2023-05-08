@@ -81,10 +81,10 @@ func (f *Finder) buildField(expr ast.Expr, proj *projscan.Project, field *projsc
 		})
 	case *ast.Ident:
 		// it means that the field type is either a built-in type or a struct from the same package
-		if FieldType(x.Name).IsValid() {
+		if projscan.FieldType(x.Name).IsValid() {
 			return &projscan.Field{
 				Name:      field.Name,
-				Type:      x.Name,
+				Type:      projscan.FieldType(x.Name),
 				Doc:       field.Doc,
 				StructRef: field.StructRef,
 				Pointer:   field.Pointer,
@@ -99,7 +99,7 @@ func (f *Finder) buildField(expr ast.Expr, proj *projscan.Project, field *projsc
 
 		return &projscan.Field{
 			Name:      field.Name,
-			Type:      x.Name,
+			Type:      projscan.FieldType(x.Name),
 			Doc:       field.Doc,
 			StructRef: structRef,
 			Pointer:   field.Pointer,
@@ -125,7 +125,7 @@ func (f *Finder) buildField(expr ast.Expr, proj *projscan.Project, field *projsc
 
 			return &projscan.Field{
 				Name:      field.Name,
-				Type:      fmt.Sprintf("%s.%s", pkg.Name, x.Sel.Name),
+				Type:      projscan.FieldType(fmt.Sprintf("%s.%s", pkg.Name, x.Sel.Name)),
 				Doc:       field.Doc,
 				StructRef: structRef,
 				Pointer:   field.Pointer,

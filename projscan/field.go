@@ -1,3 +1,5 @@
+//go:generate go-enum
+
 package projscan
 
 import (
@@ -7,13 +9,17 @@ import (
 
 // Field represents a field of a struct.
 type Field struct {
-	Name      string  // Name of the field
-	Type      string  // Type of the field
-	Doc       string  // Documentation for the field
-	StructRef *Struct // Reference to the struct that contains this field
-	Pointer   bool    // Indicates whether the field is a pointer type or not
-	Array     bool    // Indicates whether the field is an array type or not
+	Name      string    // Name of the field
+	Type      FieldType // Type of the field
+	Doc       string    // Documentation for the field
+	StructRef *Struct   // Reference to the struct that contains this field
+	Pointer   bool      // Indicates whether the field is a pointer type or not
+	Array     bool      // Indicates whether the field is an array type or not
 }
+
+// FieldType defines the available field types in Go
+// ENUM(string, bool, int, int8, int16, int32, int64, float32, float64)
+type FieldType string
 
 // FromStandardLibrary returns true if the field's containing struct is part of the Go standard library.
 func (s *Field) FromStandardLibrary() bool {

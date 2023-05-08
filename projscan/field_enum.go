@@ -4,11 +4,11 @@
 // Build Date: 2023-03-26T21:38:06Z
 // Built By: goreleaser
 
-package fld
+package projscan
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 )
 
 const (
@@ -32,26 +32,7 @@ const (
 	FieldTypeFloat64 FieldType = "float64"
 )
 
-var ErrInvalidFieldType = fmt.Errorf("not a valid FieldType, try [%s]", strings.Join(_FieldTypeNames, ", "))
-
-var _FieldTypeNames = []string{
-	string(FieldTypeString),
-	string(FieldTypeBool),
-	string(FieldTypeInt),
-	string(FieldTypeInt8),
-	string(FieldTypeInt16),
-	string(FieldTypeInt32),
-	string(FieldTypeInt64),
-	string(FieldTypeFloat32),
-	string(FieldTypeFloat64),
-}
-
-// FieldTypeNames returns a list of possible string values of FieldType.
-func FieldTypeNames() []string {
-	tmp := make([]string, len(_FieldTypeNames))
-	copy(tmp, _FieldTypeNames)
-	return tmp
-}
+var ErrInvalidFieldType = errors.New("not a valid FieldType")
 
 // String implements the Stringer interface.
 func (x FieldType) String() string {
