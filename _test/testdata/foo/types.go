@@ -3,7 +3,7 @@ package foo
 import (
 	"time"
 
-	"github.com/angelokurtis/flagstruct/test/testdata/bar"
+	"github.com/totvs-cloud/pflagstruct/_test/testdata/bar"
 )
 
 type Baz struct {

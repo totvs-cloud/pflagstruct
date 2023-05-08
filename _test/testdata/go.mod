@@ -1,4 +1,4 @@
-module github.com/angelokurtis/flagstruct/test/testdata
+module github.com/totvs-cloud/pflagstruct/_test/testdata
 
 go 1.20
 
