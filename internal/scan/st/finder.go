@@ -10,16 +10,19 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+// Finder is a struct that represents a Go struct type finder.
 type Finder struct {
-	scanner  *syntree.Scanner
-	projects projscan.ProjectFinder
-	packages projscan.PackageFinder
+	scanner  *syntree.Scanner       // Scanner is a syntree scanner.
+	projects projscan.ProjectFinder // ProjectFinder is a project finder.
+	packages projscan.PackageFinder // PackageFinder is a package finder.
 }
 
+// NewFinder creates a new Finder instance with a given Scanner, ProjectFinder, and PackageFinder.
 func NewFinder(scanner *syntree.Scanner, projects projscan.ProjectFinder, packages projscan.PackageFinder) *Finder {
 	return &Finder{scanner: scanner, projects: projects, packages: packages}
 }
 
+// FindStructByDirectoryAndName searches for a Go struct type in a directory by its name.
 func (f *Finder) FindStructByDirectoryAndName(directory, structName string) (*projscan.Struct, error) {
 	directory, err := dir.AbsolutePath(directory)
 	if err != nil {
@@ -73,6 +76,7 @@ func (f *Finder) FindStructByDirectoryAndName(directory, structName string) (*pr
 	return result[0], nil
 }
 
+// navigateUntilStructType navigates until a Go struct type is found in a given file.
 func (f *Finder) navigateUntilStructType(proj *projscan.Project, filename string, file *ast.File, spec *ast.TypeSpec) (*ast.StructType, *ast.File, error) {
 	switch t := spec.Type.(type) {
 	case *ast.StructType:
