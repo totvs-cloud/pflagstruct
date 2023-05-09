@@ -2,8 +2,11 @@ package code
 
 import (
 	"fmt"
+	"os"
+	"path"
 
 	"github.com/dave/jennifer/jen"
+	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/totvs-cloud/pflagstruct/projscan"
 )
@@ -39,8 +42,21 @@ func (f *FlagSource) File() *jen.File {
 	return file
 }
 
-func (f *FlagSource) Print() {
+func (f *FlagSource) Bytes() []byte {
 	file := f.File()
-	bytes := []byte(fmt.Sprintf("%#v", file))
+	return []byte(fmt.Sprintf("%#v", file))
+}
+
+func (f *FlagSource) Print() {
+	bytes := f.Bytes()
 	fmt.Println(string(bytes))
+}
+
+func (f *FlagSource) WriteFile(directory string, file string) error {
+	bytes := f.Bytes()
+	if err := os.WriteFile(path.Join(directory, file), bytes, 0o644); err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

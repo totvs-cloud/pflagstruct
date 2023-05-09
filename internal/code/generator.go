@@ -89,7 +89,5 @@ func (g *Generator) Generate(directory string, structName string, destination st
 		source.ImportName(imp.Path, imp.Name)
 	}
 
-	source.Print()
-
-	return nil
+	return source.WriteFile(destination, "flags_gen.go")
 }
