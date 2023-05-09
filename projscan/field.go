@@ -3,7 +3,6 @@
 package projscan
 
 import (
-	"go/ast"
 	"strings"
 )
 
@@ -28,15 +27,6 @@ func (s *Field) FromStandardLibrary() bool {
 	}
 
 	return strings.HasPrefix(s.StructRef.Package.Path, "std/")
-}
-
-// ASTFile returns the AST file for the struct that this field belongs to.
-func (s *Field) ASTFile() *ast.File {
-	if s.StructRef == nil || s.StructRef.AST == nil {
-		return nil
-	}
-
-	return s.StructRef.AST.File
 }
 
 // PackageDirectory returns the directory of the package that this field belongs to.

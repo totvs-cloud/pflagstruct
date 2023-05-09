@@ -37,11 +37,11 @@ func (f *Finder) FindFieldsByStruct(st *projscan.Struct) ([]*projscan.Field, err
 
 	for _, field := range st.AST.StructType.Fields.List {
 		for _, name := range field.Names {
-			built, err := f.buildField(field.Type, proj, &projscan.Field{
+			built, err := f.buildField(field.Type, st, proj, &projscan.Field{
 				Name:      name.String(),
 				Type:      "",
 				Doc:       extractDoc(field.Doc),
-				StructRef: st,
+				StructRef: nil,
 				Pointer:   false,
 				Array:     false,
 			})
@@ -57,11 +57,11 @@ func (f *Finder) FindFieldsByStruct(st *projscan.Struct) ([]*projscan.Field, err
 }
 
 // buildField creates a new Field based on the given parameters.
-func (f *Finder) buildField(expr ast.Expr, proj *projscan.Project, field *projscan.Field) (*projscan.Field, error) {
+func (f *Finder) buildField(expr ast.Expr, st *projscan.Struct, proj *projscan.Project, field *projscan.Field) (*projscan.Field, error) {
 	switch x := expr.(type) {
 	case *ast.StarExpr:
 		// it means that the field type is a pointer
-		return f.buildField(x.X, proj, &projscan.Field{
+		return f.buildField(x.X, st, proj, &projscan.Field{
 			Name:      field.Name,
 			Type:      field.Type,
 			Doc:       field.Doc,
@@ -71,7 +71,7 @@ func (f *Finder) buildField(expr ast.Expr, proj *projscan.Project, field *projsc
 		})
 	case *ast.ArrayType:
 		// it means that the field type is an array
-		return f.buildField(x.Elt, proj, &projscan.Field{
+		return f.buildField(x.Elt, st, proj, &projscan.Field{
 			Name:      field.Name,
 			Type:      field.Type,
 			Doc:       field.Doc,
@@ -92,7 +92,7 @@ func (f *Finder) buildField(expr ast.Expr, proj *projscan.Project, field *projsc
 			}, nil
 		}
 
-		structRef, err := f.structs.FindStructByDirectoryAndName(field.PackageDirectory(), x.Name)
+		structRef, err := f.structs.FindStructByDirectoryAndName(st.Package.Directory, x.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func (f *Finder) buildField(expr ast.Expr, proj *projscan.Project, field *projsc
 	case *ast.SelectorExpr:
 		// it means that the field type is a struct from another package
 		if ident, ok := x.X.(*ast.Ident); ok {
-			path, err := syntree.WrapFile(field.ASTFile()).FindPackagePathByName(ident.Name)
+			path, err := syntree.WrapFile(st.AST.File).FindPackagePathByName(ident.Name)
 			if err != nil {
 				return nil, err
 			}
