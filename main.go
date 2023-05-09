@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go/token"
 	"os"
 	"time"
 
@@ -9,6 +10,12 @@ import (
 	"github.com/lmittmann/tint"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/totvs-cloud/pflagstruct/internal/code"
+	scanfld "github.com/totvs-cloud/pflagstruct/internal/scan/fld"
+	scanpkg "github.com/totvs-cloud/pflagstruct/internal/scan/pkg"
+	scanproj "github.com/totvs-cloud/pflagstruct/internal/scan/proj"
+	scanst "github.com/totvs-cloud/pflagstruct/internal/scan/st"
+	"github.com/totvs-cloud/pflagstruct/internal/syntree"
 	"golang.org/x/exp/slog"
 )
 
@@ -22,8 +29,13 @@ type Generator interface {
 }
 
 func NewGenerator() Generator {
-	// TODO: implement me
-	panic("implement me")
+	scanner := syntree.NewScanner(token.NewFileSet())
+	projects := scanproj.NewFinder(scanner)
+	packages := scanpkg.NewFinder(scanner, projects)
+	structs := scanst.NewFinder(scanner, projects, packages)
+	fields := scanfld.NewFinder(packages, projects, structs)
+
+	return code.NewGenerator(fields, packages, projects, structs)
 }
 
 func NewCommand() (*cobra.Command, error) {
