@@ -26,10 +26,6 @@ var (
 	debug                                       bool
 )
 
-type Generator interface {
-	Generate(directory string, structName string, destination string) error
-}
-
 func NewCommand() (*cobra.Command, error) {
 	const (
 		directoryFlagName   = "directory"
