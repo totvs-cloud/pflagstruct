@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/dave/jennifer v1.6.1
 	github.com/enescakir/emoji v1.0.0
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gookit/color v1.5.3
 	github.com/ku/go-change-case v0.0.1
 	github.com/lmittmann/tint v0.3.2
