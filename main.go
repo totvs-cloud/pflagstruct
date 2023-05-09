@@ -49,7 +49,7 @@ func NewCommand() (*cobra.Command, error) {
 			err := validation.Validate(flags,
 				validation.Map(
 					validation.Key("--"+directoryFlagName),
-					validation.Key("--"+packageFlagName, validation.Required.When(pkgPath == "").Error(fmt.Sprintf("either %s or %s is required.", "--"+packageFlagName, "--"+directoryFlagName))),
+					validation.Key("--"+packageFlagName, validation.Required.When(directory == "").Error(fmt.Sprintf("either %s or %s is required.", "--"+packageFlagName, "--"+directoryFlagName))),
 					validation.Key("--"+structNameFlagName, validation.Required),
 					validation.Key("--"+destinationFlagName, validation.Required),
 				),
