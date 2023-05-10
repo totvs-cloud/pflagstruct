@@ -1,37 +1,61 @@
 package code
 
-import "github.com/dave/jennifer/jen"
+import (
+	"path"
 
-type ConstructorForFlags struct{}
+	"github.com/dave/jennifer/jen"
+	changecase "github.com/ku/go-change-case"
+	"github.com/totvs-cloud/pflagstruct/projscan"
+)
 
-func (c *ConstructorForFlags) Statement() *jen.Statement {
+type SetUpConstructor struct {
+	FlagsBuilderName string
+	Struct           *projscan.Struct
+}
+
+func (c *SetUpConstructor) MethodName() string {
+	return changecase.Pascal(path.Join("SetUp", c.Struct.Name, "to", "flags"))
+}
+
+func (c *SetUpConstructor) Statement() *jen.Statement {
 	args := []jen.Code{
-		jen.Id("cmd").Op("*").Qual("github.com/spf13/cobra", "Command"),
-	}
-	returns := []jen.Code{
-		jen.Op("*").Id("CommandFlags"),
+		jen.Id("flags").Op("*").Qual("github.com/spf13/pflag", "FlagSet"),
 	}
 
-	return jen.Func().Id("persistentFlagsOf").Params(args...).Params(returns...).Block(
-		jen.Return().Op("&").Id("CommandFlags").Values(
-			jen.Id("flags").Op(":").Id("cmd").Dot("PersistentFlags").Call(),
-		),
+	methodCall := changecase.Camel(path.Join("setUp", c.Struct.Name))
+
+	return jen.Func().Id(c.MethodName()).Params(args...).Block(
+		jen.Parens(
+			jen.Op("&").Id(c.FlagsBuilderName).Values(jen.Id("flags").Op(":").Id("flags")),
+		).
+			Dot(methodCall).Call(),
 	)
 }
 
-type ConstructorForPersistentFlags struct{}
+type GetConstructor struct {
+	FlagsBuilderName string
+	Struct           *projscan.Struct
+}
 
-func (c *ConstructorForPersistentFlags) Statement() *jen.Statement {
+func (g *GetConstructor) MethodName() string {
+	return changecase.Pascal(path.Join("Get", g.Struct.Name, "from", "flags"))
+}
+
+func (g *GetConstructor) Statement() *jen.Statement {
 	args := []jen.Code{
-		jen.Id("cmd").Op("*").Qual("github.com/spf13/cobra", "Command"),
+		jen.Id("flags").Op("*").Qual("github.com/spf13/pflag", "FlagSet"),
 	}
 	returns := []jen.Code{
-		jen.Op("*").Id("CommandFlags"),
+		jen.Op("*").Qual(g.Struct.Package.Path, g.Struct.Name),
+		jen.Error(),
 	}
 
-	return jen.Func().Id("flagsOf").Params(args...).Params(returns...).Block(
-		jen.Return().Op("&").Id("CommandFlags").Values(
-			jen.Id("flags").Op(":").Id("cmd").Dot("Flags").Call(),
-		),
+	methodCall := changecase.Camel(path.Join("get", g.Struct.Name))
+
+	return jen.Func().Id(g.MethodName()).Params(args...).Params(returns...).Block(
+		jen.Return().Parens(
+			jen.Op("&").Id(g.FlagsBuilderName).Values(jen.Id("flags").Op(":").Id("flags")),
+		).
+			Dot(methodCall).Call(),
 	)
 }

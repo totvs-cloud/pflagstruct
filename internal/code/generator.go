@@ -1,6 +1,9 @@
 package code
 
 import (
+	"path"
+
+	changecase "github.com/ku/go-change-case"
 	"github.com/totvs-cloud/pflagstruct/projscan"
 )
 
@@ -31,11 +34,13 @@ func (g *Generator) Generate(directory string, structName string, destination st
 		return err
 	}
 
+	_ = flags
+	fbn := changecase.Camel(path.Join(st.Name, "flags", "builder"))
 	blocks := []Block{
-		&CommandFlagsStruct{},
-		&ConstructorForFlags{},
-		&ConstructorForPersistentFlags{},
-		&SetterMethod{Struct: st, Flags: flags},
+		&SetUpConstructor{FlagsBuilderName: fbn, Struct: st},
+		&GetConstructor{FlagsBuilderName: fbn, Struct: st},
+		&FlagsBuilderStruct{Name: fbn},
+		&SetterMethod{FlagsBuilderName: fbn, Struct: st, Flags: flags},
 	}
 
 	refs, err := g.structReferences(st)
@@ -49,10 +54,11 @@ func (g *Generator) Generate(directory string, structName string, destination st
 	}
 
 	getterMethods := []*GetterMethod{{
-		Prefix:  "",
-		Struct:  st,
-		Pointer: true,
-		Fields:  fields,
+		FlagsBuilderName: fbn,
+		Prefix:           "",
+		Struct:           st,
+		Pointer:          true,
+		Fields:           fields,
 	}}
 
 	for prefix, field := range refs {
@@ -63,10 +69,11 @@ func (g *Generator) Generate(directory string, structName string, destination st
 			}
 
 			getterMethods = append(getterMethods, &GetterMethod{
-				Prefix:  prefix,
-				Struct:  field.StructRef,
-				Pointer: field.Pointer,
-				Fields:  subFields,
+				FlagsBuilderName: fbn,
+				Prefix:           prefix,
+				Struct:           field.StructRef,
+				Pointer:          field.Pointer,
+				Fields:           subFields,
 			})
 		}
 	}
@@ -89,5 +96,5 @@ func (g *Generator) Generate(directory string, structName string, destination st
 		source.ImportName(imp.Path, imp.Name)
 	}
 
-	return source.WriteFile(destination, "flags_gen.go")
+	return source.WriteFile(destination, changecase.Snake(path.Join(st.Name, "flags"))+".go")
 }

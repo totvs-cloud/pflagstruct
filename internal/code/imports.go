@@ -14,7 +14,7 @@ func (g *Generator) structImports(st *projscan.Struct) ([]*projscan.Package, err
 		return nil, err
 	}
 
-	pkgsmap := make(map[string]*projscan.Package)
+	pkgsmap := map[string]*projscan.Package{st.Package.Path: st.Package}
 
 	for _, ref := range refs {
 		if !ref.FromStandardLibrary() {

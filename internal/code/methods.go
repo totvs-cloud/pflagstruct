@@ -9,16 +9,17 @@ import (
 )
 
 type SetterMethod struct {
-	Struct *projscan.Struct
-	Flags  map[string][]*projscan.Field
+	FlagsBuilderName string
+	Struct           *projscan.Struct
+	Flags            map[string][]*projscan.Field
 }
 
 func (s *SetterMethod) MethodName() string {
-	return changecase.Pascal(path.Join("SetUp", s.Struct.Name))
+	return changecase.Camel(path.Join("SetUp", s.Struct.Name))
 }
 
 func (s *SetterMethod) Statement() *jen.Statement {
-	receiver := jen.Id("cf").Op("*").Id("CommandFlags")
+	receiver := jen.Id("cf").Op("*").Id(s.FlagsBuilderName)
 
 	calls := make([]jen.Code, 0)
 
@@ -36,15 +37,16 @@ func (s *SetterMethod) Statement() *jen.Statement {
 }
 
 type GetterMethod struct {
-	Prefix  string
-	Struct  *projscan.Struct
-	Pointer bool
-	Fields  []*projscan.Field
+	FlagsBuilderName string
+	Prefix           string
+	Struct           *projscan.Struct
+	Pointer          bool
+	Fields           []*projscan.Field
 }
 
 func (g *GetterMethod) MethodName() string {
 	if g.Prefix == "" {
-		return changecase.Pascal(path.Join("Get", g.Struct.Name))
+		return changecase.Camel(path.Join("Get", g.Struct.Name))
 	}
 
 	return changecase.Camel(path.Join("Get", g.Prefix))
@@ -74,7 +76,7 @@ func (g *GetterMethod) ReturnCall() *jen.Statement {
 }
 
 func (g *GetterMethod) Statement() *jen.Statement {
-	receiver := jen.Id("cf").Op("*").Id("CommandFlags")
+	receiver := jen.Id("cf").Op("*").Id(g.FlagsBuilderName)
 	returns := []jen.Code{
 		g.ReturnType(), jen.Id("err").Id("error"),
 	}
