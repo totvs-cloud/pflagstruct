@@ -43,9 +43,6 @@ func (s *Finder) FindPackageByDirectory(directory string) (*projscan.Package, er
 
 	for filename, file := range files {
 		pkgname := file.Name.String()
-		if pkgname == "main" {
-			continue
-		}
 
 		if givenPackageList(result).containsName(pkgname) {
 			continue

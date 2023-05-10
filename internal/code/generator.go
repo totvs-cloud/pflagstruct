@@ -101,6 +101,7 @@ func (g *Generator) Generate(directory string, structName string, destination st
 	if err != nil {
 		return "", err
 	}
+
 	filepath := path.Join(absolutePath, changecase.Snake(path.Join(st.Name, "flags"))+".go")
 	if err = source.WriteFile(filepath); err != nil {
 		return "", err
