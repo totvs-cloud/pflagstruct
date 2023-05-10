@@ -15,7 +15,7 @@ go install github.com/totvs-cloud/pflagstruct@latest
 
 ## Usage
 
-The CLI Code Generation Tool provides the following flags:
+The CLI provides the following flags:
 
 - `--destination string`: Specifies the path where the generated code will be saved. If not provided, the current path
   is used.
@@ -42,7 +42,7 @@ The CLI Code Generation Tool provides the following flags:
    pflagstruct --destination /path/to/destination --package github.com/example/package --struct-name MyStruct
    ```
 
-4. Automate the code generation process using the "//go:generate" comment in your Go source files:
+4. Automate the code generation process using the `//go:generate` comment in your Go source files:
     ```go
     //go:generate pflagstruct --struct-name=User --package=github.com/example/model
     
@@ -134,5 +134,5 @@ definitions.
 
 ## Contributing
 
-Contributions to the CLI Code Generation Tool are welcome! If you find any issues or have suggestions for improvement,
+Contributions to the pflagstruct are welcome! If you find any issues or have suggestions for improvement,
 please open an issue or submit a pull request.
