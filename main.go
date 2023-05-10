@@ -64,40 +64,45 @@ func NewCommand() (*cobra.Command, error) {
 			structs := scanst.NewFinder(scanner, projects, packages)
 			fields := scanfld.NewFinder(packages, projects, structs)
 
-			if directory != "" {
-				return code.NewGenerator(fields, packages, projects, structs).Generate(directory, structName, destination)
+			if directory == "" {
+				proj, err := projects.FindProjectByDirectory(destination)
+				if err != nil {
+					return err
+				}
+
+				pkg, err := packages.FindPackageByPathAndProject(pkgPath, proj)
+				if err != nil {
+					return err
+				}
+
+				directory = pkg.Directory
 			}
 
-			proj, err := projects.FindProjectByDirectory(destination)
+			filepath, err := code.NewGenerator(fields, packages, projects, structs).Generate(directory, structName, destination)
 			if err != nil {
 				return err
 			}
-
-			pkg, err := packages.FindPackageByPathAndProject(pkgPath, proj)
-			if err != nil {
-				return err
-			}
-
-			return code.NewGenerator(fields, packages, projects, structs).Generate(pkg.Directory, structName, destination)
+			fmt.Printf("%s code has been successfully generated and can be found at: %s", emoji.CheckMark, filepath)
+			return nil
 		},
 	}
 
-	cmd.Flags().StringVar(&directory, directoryFlagName, "", "Specifies the path where the tool will search for the source file containing the struct definition")
-	cmd.Flags().StringVar(&pkgPath, packageFlagName, "", "Specifies the path where the tool will search for the source file containing the struct definition")
-	cmd.Flags().StringVar(&structName, structNameFlagName, "", "Specifies the name of the struct that will be generated in the code. This flag is required.")
-	cmd.Flags().StringVar(&destination, destinationFlagName, ".", "Specifies the file name and path where the generated code will be saved. This flag is required.")
-	cmd.Flags().BoolVar(&debug, debugFlagName, false, "Enables debug mode, which will print additional information during the code generation process to help with troubleshooting. If this flag is not set, the tool will run in normal mode without additional debug information.")
+	cmd.Flags().StringVar(&structName, structNameFlagName, "", "specifies the name of the struct. This flag is required to generate code based on the provided struct")
+	cmd.Flags().StringVar(&pkgPath, packageFlagName, "", "specifies the package path of the struct definition. This flag is required if the --directory flag is not informed")
+	cmd.Flags().StringVar(&directory, directoryFlagName, "", "specifies the path where the source file containing the struct definition is located. This flag is required if the --package flag is not informed")
+	cmd.Flags().StringVar(&destination, destinationFlagName, ".", "specifies the path where the generated code will be saved")
+	cmd.Flags().BoolVar(&debug, debugFlagName, false, "enables debug mode, which provides additional output for debugging purposes")
 
 	return cmd, nil
 }
 
 func fatal(err error) {
 	if debug {
-		color.Redf("%s %+v", emoji.CrossMark, err)
+		color.Redf("%s %+v\n", emoji.CrossMark, err)
 		os.Exit(1)
 	}
 
-	color.Redf("%s %s", emoji.CrossMark, err)
+	color.Redf("%s %s\n", emoji.CrossMark, err)
 	os.Exit(1)
 }
 

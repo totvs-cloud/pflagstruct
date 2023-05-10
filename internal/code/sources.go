@@ -3,7 +3,6 @@ package code
 import (
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/pkg/errors"
@@ -53,9 +52,9 @@ func (f *FlagSource) Print() {
 	fmt.Println(string(bytes))
 }
 
-func (f *FlagSource) WriteFile(directory string, file string) error {
+func (f *FlagSource) WriteFile(filepath string) error {
 	bytes := f.Bytes()
-	if err := os.WriteFile(path.Join(directory, file), bytes, 0o644); err != nil {
+	if err := os.WriteFile(filepath, bytes, 0o644); err != nil {
 		return errors.WithStack(err)
 	}
 

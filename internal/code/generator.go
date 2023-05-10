@@ -4,6 +4,7 @@ import (
 	"path"
 
 	changecase "github.com/ku/go-change-case"
+	"github.com/totvs-cloud/pflagstruct/internal/dir"
 	"github.com/totvs-cloud/pflagstruct/projscan"
 )
 
@@ -18,20 +19,20 @@ func NewGenerator(fields projscan.FieldFinder, packages projscan.PackageFinder, 
 	return &Generator{fields: fields, packages: packages, projects: projects, structs: structs}
 }
 
-func (g *Generator) Generate(directory string, structName string, destination string) error {
+func (g *Generator) Generate(directory string, structName string, destination string) (string, error) {
 	pkg, err := g.packages.FindPackageByDirectory(destination)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	st, err := g.structs.FindStructByDirectoryAndName(directory, structName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	flags, err := g.structFlags(st)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	_ = flags
@@ -45,12 +46,12 @@ func (g *Generator) Generate(directory string, structName string, destination st
 
 	refs, err := g.structReferences(st)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	fields, err := g.fields.FindFieldsByStruct(st)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	getterMethods := []*GetterMethod{{
@@ -65,7 +66,7 @@ func (g *Generator) Generate(directory string, structName string, destination st
 		if !field.StructRef.FromStandardLibrary() && !field.Array {
 			subFields, err := g.fields.FindFieldsByStruct(field.StructRef)
 			if err != nil {
-				return err
+				return "", err
 			}
 
 			getterMethods = append(getterMethods, &GetterMethod{
@@ -89,12 +90,21 @@ func (g *Generator) Generate(directory string, structName string, destination st
 
 	imports, err := g.structImports(st)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	for _, imp := range imports {
 		source.ImportName(imp.Path, imp.Name)
 	}
 
-	return source.WriteFile(destination, changecase.Snake(path.Join(st.Name, "flags"))+".go")
+	absolutePath, err := dir.AbsolutePath(destination)
+	if err != nil {
+		return "", err
+	}
+	filepath := path.Join(absolutePath, changecase.Snake(path.Join(st.Name, "flags"))+".go")
+	if err = source.WriteFile(filepath); err != nil {
+		return "", err
+	}
+
+	return filepath, nil
 }
