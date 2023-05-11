@@ -35,7 +35,6 @@ func (g *Generator) Generate(directory string, structName string, destination st
 		return "", err
 	}
 
-	_ = flags
 	fbn := changecase.Camel(path.Join(st.Name, "flags", "builder"))
 	blocks := []Block{
 		&SetUpConstructor{FlagsBuilderName: fbn, Struct: st},
@@ -54,7 +53,7 @@ func (g *Generator) Generate(directory string, structName string, destination st
 		return "", err
 	}
 
-	getterMethods := []*GetterMethod{{
+	getterMethods := []MethodBlock{&GetterMethod{
 		FlagsBuilderName: fbn,
 		Prefix:           "",
 		Struct:           st,
@@ -63,7 +62,14 @@ func (g *Generator) Generate(directory string, structName string, destination st
 	}}
 
 	for prefix, field := range refs {
-		if !field.StructRef.FromStandardLibrary() && !field.Array {
+		if field.IsTCloudTags() {
+			getterMethods = append(getterMethods, &TagsGetterMethod{
+				FlagsBuilderName: fbn,
+				Prefix:           prefix,
+				Struct:           field.StructRef,
+				Pointer:          field.Pointer,
+			})
+		} else if !field.StructRef.FromStandardLibrary() && !field.Array {
 			subFields, err := g.fields.FindFieldsByStruct(field.StructRef)
 			if err != nil {
 				return "", err

@@ -1,7 +1,9 @@
 package code
 
 import (
+	"fmt"
 	"path"
+	"strings"
 
 	"github.com/dave/jennifer/jen"
 	changecase "github.com/ku/go-change-case"
@@ -19,12 +21,31 @@ func (s *SetterCall) Flag() string {
 }
 
 func (s *SetterCall) CobraMethod() string {
+	if s.Field.IsTCloudTags() {
+		return "StringSlice"
+	}
+
 	var suffix string
 	if s.Field.Array {
 		suffix = "Slice"
 	}
 
 	return changecase.Pascal(path.Join(s.Field.Type.String(), suffix))
+}
+
+func (s *SetterCall) UsageMessage() string {
+	doc := strings.TrimSpace(s.Field.Doc)
+
+	if s.Field.IsTCloudTags() {
+		msg := fmt.Sprintf("the desired key-value pairs separated by commas (%s key1=value1,key2=value2,key3=value3)", s.Flag())
+		if len(doc) > 0 {
+			doc += ". Provide " + msg
+		} else {
+			doc += "provide " + msg
+		}
+	}
+
+	return doc
 }
 
 func (s *SetterCall) DefaultValue() *jen.Statement {
@@ -47,13 +68,13 @@ func (s *SetterCall) DefaultValue() *jen.Statement {
 }
 
 func (s *SetterCall) Statement() *jen.Statement {
-	if !s.Field.Type.IsValid() {
-		return nil
+	if s.Field.IsTCloudTags() || s.Field.Type.IsValid() {
+		return jen.Id("cf").
+			Dot("flags").Dot(s.CobraMethod()).
+			Call(jen.Lit(s.Flag()), s.DefaultValue(), jen.Lit(s.UsageMessage()))
 	}
 
-	return jen.Id("cf").
-		Dot("flags").Dot(s.CobraMethod()).
-		Call(jen.Lit(s.Flag()), s.DefaultValue(), jen.Lit(s.Field.Doc))
+	return nil
 }
 
 type GetterCall struct {
@@ -84,7 +105,7 @@ func (g *GetterCall) Statement() *jen.Statement {
 		returnId = jen.Id(changecase.Camel(g.Struct.Name))
 	}
 
-	if g.Field.StructRef != nil && !g.Field.StructRef.FromStandardLibrary() && !g.Field.Array {
+	if g.Field.StructRef != nil && !g.Field.StructRef.FromStandardLibrary() && (!g.Field.Array || g.Field.IsTCloudTags()) {
 		return jen.If(jen.List(id.Dot(g.Field.Name), jen.Err()).Op("=").
 			Id("cf").Dot(changecase.Camel(path.Join("Get", g.Prefix, g.Field.Name))).Call(), jen.Err().Op("!=").Nil()).
 			Block(jen.Return().List(returnId, jen.Err()))

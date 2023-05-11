@@ -95,3 +95,73 @@ func (g *GetterMethod) Statement() *jen.Statement {
 
 	return jen.Func().Params(receiver).Id(g.MethodName()).Params().Params(returns...).Block(calls...)
 }
+
+type TagsGetterMethod struct {
+	FlagsBuilderName string
+	Prefix           string
+	Struct           *projscan.Struct
+	Pointer          bool
+}
+
+func (t *TagsGetterMethod) MethodName() string {
+	if t.Prefix == "" {
+		return changecase.Camel(path.Join("Get", t.Struct.Name))
+	}
+
+	return changecase.Camel(path.Join("Get", t.Prefix))
+}
+
+func (t *TagsGetterMethod) Initialization() *jen.Statement {
+	id := jen.Index()
+	if t.Pointer {
+		id = jen.Index().Op("*")
+	}
+
+	return jen.Id("resultingTags").Op(":=").Id("make").Call(id.Qual(t.Struct.Package.Path, t.Struct.Name), jen.Lit(0), jen.Id("len").Call(jen.Id("tagStrList")))
+}
+
+func (t *TagsGetterMethod) ReturnType() *jen.Statement {
+	id := jen.Id(changecase.Camel(t.Struct.Name))
+	if t.Pointer {
+		return id.Index().Op("*").Qual(t.Struct.Package.Path, t.Struct.Name)
+	}
+
+	return id.Index().Qual(t.Struct.Package.Path, t.Struct.Name)
+}
+
+func (t *TagsGetterMethod) ResultAssignment() *jen.Statement {
+	if t.Pointer {
+		return jen.Op("&").Qual(t.Struct.Package.Path, t.Struct.Name)
+	}
+
+	return jen.Qual(t.Struct.Package.Path, t.Struct.Name)
+}
+
+func (t *TagsGetterMethod) Flag() string {
+	return changecase.Param(path.Join(t.Prefix))
+}
+
+func (t *TagsGetterMethod) Statement() *jen.Statement {
+	receiver := jen.Id("cf").Op("*").Id(t.FlagsBuilderName)
+	returns := []jen.Code{
+		jen.Index().Op("*").Qual(t.Struct.Package.Path, t.Struct.Name),
+		jen.Error(),
+	}
+
+	calls := []jen.Code{
+		jen.List(jen.Id("tagStrList"), jen.Id("err")).Op(":=").Id("cf").Dot("flags").Dot("GetStringSlice").Call(jen.Lit(t.Flag())),
+		jen.If(jen.Id("err").Op("!=").Id("nil")).Block(jen.Return().List(jen.Id("nil"), jen.Qual("fmt", "Errorf").Call(jen.Lit("error retrieving \"tags\" from command flags: %w"), jen.Id("err")))),
+		t.Initialization(),
+		jen.For(jen.List(jen.Id("_"),
+			jen.Id("tagStr")).Op(":=").Range().Id("tagStrList")).Block(jen.Id("parts").Op(":=").Qual("strings", "Split").Call(jen.Id("tagStr"),
+			jen.Lit("=")),
+			jen.If(jen.Id("len").Call(jen.Id("parts")).Op("!=").Lit(2)).Block(jen.Return().List(jen.Id("nil"),
+				jen.Qual("fmt", "Errorf").Call(jen.Lit("error retrieving \"tags\" from command flags: invalid format: %s"), jen.Id("tagStr")))),
+			jen.Id("resultingTags").Op("=").Id("append").Call(jen.Id("resultingTags"),
+				t.ResultAssignment().Values(jen.Id("Name").Op(":").Id("parts").Index(jen.Lit(0)), jen.Id("Value").Op(":").Id("parts").Index(jen.Lit(1))))),
+	}
+
+	calls = append(calls, jen.Return().List(jen.Id("resultingTags"), jen.Nil()))
+
+	return jen.Func().Params(receiver).Id(t.MethodName()).Params().Params(returns...).Block(calls...)
+}
