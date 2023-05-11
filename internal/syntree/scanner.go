@@ -67,5 +67,6 @@ func hasBuildConstraint(file *ast.File) bool {
 			}
 		}
 	}
+
 	return false
 }

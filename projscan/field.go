@@ -29,6 +29,17 @@ func (s *Field) FromStandardLibrary() bool {
 	return strings.HasPrefix(s.StructRef.Package.Path, "std/")
 }
 
+func (s *Field) IsTCloudTags() bool {
+	return s.HasStructRef("github.com/totvs-cloud/tcloud-iaas-sdk/pkg/tags", "Tags")
+}
+
+func (s *Field) HasStructRef(path, name string) bool {
+	return s.StructRef != nil &&
+		s.StructRef.Name == name &&
+		s.StructRef.Package != nil &&
+		s.StructRef.Package.Path == path
+}
+
 // PackageDirectory returns the directory of the package that this field belongs to.
 func (s *Field) PackageDirectory() string {
 	if s.StructRef == nil || s.StructRef.Package == nil {

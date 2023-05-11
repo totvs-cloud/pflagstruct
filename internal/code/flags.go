@@ -17,9 +17,9 @@ func (g *Generator) structFlags(st *projscan.Struct) (map[string][]*projscan.Fie
 	refs := make(map[string][]*projscan.Field)
 
 	for _, fld := range flds {
-		if fld.StructRef != nil && fld.Array {
+		if fld.StructRef != nil && fld.Array && !fld.IsTCloudTags() {
 			continue // ignore array of structs
-		} else if fld.StructRef != nil {
+		} else if fld.StructRef != nil && !fld.IsTCloudTags() {
 			extracted, err := g.fieldFlags(fld, changecase.Param(fld.Name))
 			if err != nil {
 				return nil, err
@@ -44,9 +44,9 @@ func (g *Generator) fieldFlags(field *projscan.Field, prefix string) (map[string
 	}
 
 	for _, fld := range flds {
-		if fld.StructRef != nil && fld.Array {
+		if fld.StructRef != nil && fld.Array && !fld.IsTCloudTags() {
 			continue // ignore array of structs
-		} else if fld.StructRef != nil {
+		} else if fld.StructRef != nil && !fld.IsTCloudTags() {
 			subRefs, err := g.fieldFlags(fld, changecase.Param(path.Join(prefix, fld.Name)))
 			if err != nil {
 				// TODO: warn here
