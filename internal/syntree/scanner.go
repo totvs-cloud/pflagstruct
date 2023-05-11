@@ -41,6 +41,11 @@ func (s *Scanner) ScanDirectory(directory string) (map[string]*ast.File, error) 
 
 	for _, pkg := range pkgs {
 		for name, file := range pkg.Files {
+			if hasBuildConstraint(file) {
+				// file has a build constraint, ignore it
+				continue
+			}
+			// no build constraints found, include the file
 			files[name] = file
 		}
 	}
@@ -51,4 +56,16 @@ func (s *Scanner) ScanDirectory(directory string) (map[string]*ast.File, error) 
 // filterTestingFiles is a function that is used to filter files during parsing.
 func filterTestingFiles(info fs.FileInfo) bool {
 	return !strings.HasSuffix(info.Name(), "_test.go")
+}
+
+// hasBuildConstraint checks if the given AST file has a build constraint.
+func hasBuildConstraint(file *ast.File) bool {
+	for _, comment := range file.Comments {
+		for _, c := range comment.List {
+			if strings.HasPrefix(c.Text, "//go:build") {
+				return true
+			}
+		}
+	}
+	return false
 }
