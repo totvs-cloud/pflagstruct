@@ -82,7 +82,7 @@ func NewCommand() (*cobra.Command, error) {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%s code has been successfully generated and can be found at: %s", emoji.CheckMark, filepath)
+			fmt.Printf("%s Code generated successfully! Find it at: %s\n", emoji.CheckMark, filepath)
 			return nil
 		},
 	}

@@ -132,6 +132,40 @@ func (f *Finder) buildField(expr ast.Expr, st *projscan.Struct, proj *projscan.P
 				Array:     field.Array,
 			}, nil
 		}
+	case *ast.MapType:
+		// it means that the field type is a map
+		key, err := f.buildField(x.Key, st, proj, &projscan.Field{
+			Name:      field.Name,
+			Type:      "",
+			Doc:       field.Doc,
+			StructRef: nil,
+			Pointer:   false,
+			Array:     false,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		value, err := f.buildField(x.Value, st, proj, &projscan.Field{
+			Name:      field.Name,
+			Type:      "",
+			Doc:       field.Doc,
+			StructRef: nil,
+			Pointer:   false,
+			Array:     false,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &projscan.Field{
+			Name:      field.Name,
+			Type:      projscan.FieldType(fmt.Sprintf("map[%s]%s", key.Type, value.Type)),
+			Doc:       field.Doc,
+			StructRef: field.StructRef,
+			Pointer:   field.Pointer,
+			Array:     field.Array,
+		}, nil
 	}
 
 	// if the expression is of a different type, the function returns an error
