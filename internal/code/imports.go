@@ -39,13 +39,16 @@ func (g *Generator) structReferences(st *projscan.Struct) (map[string]*projscan.
 	refs := make(map[string]*projscan.Field)
 
 	for _, fld := range flds {
-		if fld.StructRef != nil {
+		switch KindOf(fld) {
+		case FieldKindStruct, FieldKindTCloudTag:
 			extracted, err := g.fieldReferences(fld, changecase.Param(fld.Name))
 			if err != nil {
 				return nil, err
 			}
 
 			refs = lo.Assign(refs, extracted)
+		case FieldKindStringMap:
+			refs[changecase.Param(fld.Name)] = fld
 		}
 	}
 

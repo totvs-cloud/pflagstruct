@@ -1,11 +1,11 @@
 package code
 
 import (
-	"path"
-
+	"fmt"
 	changecase "github.com/ku/go-change-case"
 	"github.com/totvs-cloud/pflagstruct/internal/dir"
 	"github.com/totvs-cloud/pflagstruct/projscan"
+	"path"
 )
 
 type Generator struct {
@@ -62,14 +62,21 @@ func (g *Generator) Generate(directory string, structName string, destination st
 	}}
 
 	for prefix, field := range refs {
-		if field.IsTCloudTags() {
+		switch KindOf(field) {
+		case FieldKindTCloudTag:
 			getterMethods = append(getterMethods, &TagsGetterMethod{
 				FlagsBuilderName: fbn,
 				Prefix:           prefix,
 				Struct:           field.StructRef,
 				Pointer:          field.Pointer,
 			})
-		} else if !field.StructRef.FromStandardLibrary() && !field.Array {
+		case FieldKindStringMap:
+			getterMethods = append(getterMethods, &MapGetterMethod{
+				FlagsBuilderName: fbn,
+				Prefix:           prefix,
+				Pointer:          field.Pointer,
+			})
+		case FieldKindStruct:
 			subFields, err := g.fields.FindFieldsByStruct(field.StructRef)
 			if err != nil {
 				return "", err
@@ -82,6 +89,8 @@ func (g *Generator) Generate(directory string, structName string, destination st
 				Pointer:          field.Pointer,
 				Fields:           subFields,
 			})
+		default:
+			fmt.Println("")
 		}
 	}
 
@@ -90,6 +99,7 @@ func (g *Generator) Generate(directory string, structName string, destination st
 	}
 
 	source := &FlagSource{
+		Struct:  st,
 		Package: pkg,
 		Blocks:  blocks,
 	}

@@ -21,7 +21,8 @@ func (s *SetterCall) Flag() string {
 }
 
 func (s *SetterCall) CobraMethod() string {
-	if s.Field.IsTCloudTags() {
+	switch KindOf(s.Field) {
+	case FieldKindTCloudTag, FieldKindStringMap:
 		return "StringSlice"
 	}
 
@@ -36,7 +37,8 @@ func (s *SetterCall) CobraMethod() string {
 func (s *SetterCall) UsageMessage() string {
 	doc := strings.TrimSpace(s.Field.Doc)
 
-	if s.Field.IsTCloudTags() {
+	switch KindOf(s.Field) {
+	case FieldKindStringMap, FieldKindTCloudTag:
 		msg := fmt.Sprintf("the desired key-value pairs separated by commas (%s key1=value1,key2=value2,key3=value3)", s.Flag())
 		if len(doc) > 0 {
 			doc += ". Provide " + msg
@@ -68,7 +70,8 @@ func (s *SetterCall) DefaultValue() *jen.Statement {
 }
 
 func (s *SetterCall) Statement() *jen.Statement {
-	if s.Field.IsTCloudTags() || s.Field.Type.IsValid() {
+	switch KindOf(s.Field) {
+	case FieldKindTCloudTag, FieldKindStringMap, FieldKindNative:
 		return jen.Id("cf").
 			Dot("flags").Dot(s.CobraMethod()).
 			Call(jen.Lit(s.Flag()), s.DefaultValue(), jen.Lit(s.UsageMessage()))
@@ -105,18 +108,17 @@ func (g *GetterCall) Statement() *jen.Statement {
 		returnId = jen.Id(changecase.Camel(g.Struct.Name))
 	}
 
-	if g.Field.StructRef != nil && !g.Field.StructRef.FromStandardLibrary() && (!g.Field.Array || g.Field.IsTCloudTags()) {
-		return jen.If(jen.List(id.Dot(g.Field.Name), jen.Err()).Op("=").
-			Id("cf").Dot(changecase.Camel(path.Join("Get", g.Prefix, g.Field.Name))).Call(), jen.Err().Op("!=").Nil()).
-			Block(jen.Return().List(returnId, jen.Err()))
-	}
-
-	if g.Field.Type.IsValid() {
+	switch KindOf(g.Field) {
+	case FieldKindNative:
 		return jen.If(jen.List(id.Dot(g.Field.Name), jen.Err()).Op("=").
 			Id("cf").Dot("flags").Dot(g.CobraMethod()).Call(jen.Lit(g.Flag())), jen.Err().Op("!=").Nil()).
 			Block(
 				jen.Return().List(returnId, jen.Qual("fmt", "Errorf").Call(jen.Lit("error retrieving \""+g.Flag()+"\" from command flags: %w"), jen.Err())),
 			)
+	case FieldKindStruct, FieldKindTCloudTag, FieldKindStringMap:
+		return jen.If(jen.List(id.Dot(g.Field.Name), jen.Err()).Op("=").
+			Id("cf").Dot(changecase.Camel(path.Join("Get", g.Prefix, g.Field.Name))).Call(), jen.Err().Op("!=").Nil()).
+			Block(jen.Return().List(returnId, jen.Err()))
 	}
 
 	return nil
