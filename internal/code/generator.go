@@ -2,10 +2,11 @@ package code
 
 import (
 	"fmt"
+	"path"
+
 	changecase "github.com/ku/go-change-case"
 	"github.com/totvs-cloud/pflagstruct/internal/dir"
 	"github.com/totvs-cloud/pflagstruct/projscan"
-	"path"
 )
 
 type Generator struct {

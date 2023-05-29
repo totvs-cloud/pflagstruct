@@ -1,42 +1,49 @@
 package code
 
 import (
-	"path"
-
 	changecase "github.com/ku/go-change-case"
-	"github.com/samber/lo"
 	"github.com/totvs-cloud/pflagstruct/projscan"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
-func (g *Generator) structFlags(st *projscan.Struct) (map[string][]*projscan.Field, error) {
+func (g *Generator) structFlags(st *projscan.Struct) (*orderedmap.OrderedMap[string, []*projscan.Field], error) {
 	flds, err := g.fields.FindFieldsByStruct(st)
 	if err != nil {
 		return nil, err
 	}
 
-	refs := make(map[string][]*projscan.Field)
+	refs := orderedmap.New[string, []*projscan.Field]()
 
 	for _, fld := range flds {
-		if fld.StructRef != nil && fld.Array && !fld.IsTCloudTags() {
-			continue // ignore array of structs
-		} else if fld.StructRef != nil && !fld.IsTCloudTags() {
+		switch KindOf(fld) {
+		case FieldKindNative, FieldKindTCloudTag:
+			fields, _ := refs.Get("")
+			refs.Set("", append(fields, fld))
+		case FieldKindStruct:
 			extracted, err := g.fieldFlags(fld, changecase.Param(fld.Name))
 			if err != nil {
 				return nil, err
 			}
 
-			refs = lo.Assign(refs, extracted)
-		} else {
-			fields := refs[""]
-			refs[""] = append(fields, fld)
+			merged := orderedmap.New[string, []*projscan.Field]()
+			// Copy refs to merged map
+			for pair := refs.Oldest(); pair != nil; pair = pair.Next() {
+				merged.Set(pair.Key, pair.Value)
+			}
+			// Merge extracted into merged map
+			for pair := extracted.Oldest(); pair != nil; pair = pair.Next() {
+				merged.Set(pair.Key, pair.Value)
+			}
+
+			refs = merged
 		}
 	}
 
 	return refs, nil
 }
 
-func (g *Generator) fieldFlags(field *projscan.Field, prefix string) (map[string][]*projscan.Field, error) {
-	refs := make(map[string][]*projscan.Field)
+func (g *Generator) fieldFlags(field *projscan.Field, prefix string) (*orderedmap.OrderedMap[string, []*projscan.Field], error) {
+	refs := orderedmap.New[string, []*projscan.Field]()
 
 	flds, err := g.fields.FindFieldsByStruct(field.StructRef)
 	if err != nil { // TODO: warn here
@@ -44,19 +51,27 @@ func (g *Generator) fieldFlags(field *projscan.Field, prefix string) (map[string
 	}
 
 	for _, fld := range flds {
-		if fld.StructRef != nil && fld.Array && !fld.IsTCloudTags() {
-			continue // ignore array of structs
-		} else if fld.StructRef != nil && !fld.IsTCloudTags() {
-			subRefs, err := g.fieldFlags(fld, changecase.Param(path.Join(prefix, fld.Name)))
+		switch KindOf(fld) {
+		case FieldKindNative, FieldKindTCloudTag:
+			fields, _ := refs.Get(prefix)
+			refs.Set(prefix, append(fields, fld))
+		case FieldKindStruct:
+			extracted, err := g.fieldFlags(fld, changecase.Param(fld.Name))
 			if err != nil {
-				// TODO: warn here
-				continue
+				return nil, err
 			}
 
-			refs = lo.Assign(refs, subRefs)
-		} else {
-			fields := refs[prefix]
-			refs[prefix] = append(fields, fld)
+			merged := orderedmap.New[string, []*projscan.Field]()
+			// Copy refs to merged map
+			for pair := refs.Oldest(); pair != nil; pair = pair.Next() {
+				merged.Set(pair.Key, pair.Value)
+			}
+			// Merge extracted into merged map
+			for pair := extracted.Oldest(); pair != nil; pair = pair.Next() {
+				merged.Set(pair.Key, pair.Value)
+			}
+
+			refs = merged
 		}
 	}
 

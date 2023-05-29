@@ -3,6 +3,8 @@ package code
 import (
 	"path"
 
+	orderedmap "github.com/wk8/go-ordered-map/v2"
+
 	"github.com/dave/jennifer/jen"
 	changecase "github.com/ku/go-change-case"
 	"github.com/totvs-cloud/pflagstruct/projscan"
@@ -11,7 +13,7 @@ import (
 type SetterMethod struct {
 	FlagsBuilderName string
 	Struct           *projscan.Struct
-	Flags            map[string][]*projscan.Field
+	Flags            *orderedmap.OrderedMap[string, []*projscan.Field]
 }
 
 func (s *SetterMethod) MethodName() string {
@@ -23,7 +25,8 @@ func (s *SetterMethod) Statement() *jen.Statement {
 
 	calls := make([]jen.Code, 0)
 
-	for prefix, fields := range s.Flags {
+	for pair := s.Flags.Oldest(); pair != nil; pair = pair.Next() {
+		prefix, fields := pair.Key, pair.Value
 		for _, field := range fields {
 			calls = append(calls, (&SetterCall{
 				Prefix: prefix,
