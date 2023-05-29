@@ -62,7 +62,8 @@ func (g *Generator) Generate(directory string, structName string, destination st
 		Fields:           fields,
 	}}
 
-	for prefix, field := range refs {
+	for pair := refs.Oldest(); pair != nil; pair = pair.Next() {
+		prefix, field := pair.Key, pair.Value
 		switch KindOf(field) {
 		case FieldKindTCloudTag:
 			getterMethods = append(getterMethods, &TagsGetterMethod{
