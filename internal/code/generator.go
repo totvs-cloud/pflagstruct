@@ -1,6 +1,7 @@
 package code
 
 import (
+	"fmt"
 	"path"
 
 	changecase "github.com/ku/go-change-case"
@@ -61,15 +62,23 @@ func (g *Generator) Generate(directory string, structName string, destination st
 		Fields:           fields,
 	}}
 
-	for prefix, field := range refs {
-		if field.IsTCloudTags() {
+	for pair := refs.Oldest(); pair != nil; pair = pair.Next() {
+		prefix, field := pair.Key, pair.Value
+		switch KindOf(field) {
+		case FieldKindTCloudTag:
 			getterMethods = append(getterMethods, &TagsGetterMethod{
 				FlagsBuilderName: fbn,
 				Prefix:           prefix,
 				Struct:           field.StructRef,
 				Pointer:          field.Pointer,
 			})
-		} else if !field.StructRef.FromStandardLibrary() && !field.Array {
+		case FieldKindStringMap:
+			getterMethods = append(getterMethods, &MapGetterMethod{
+				FlagsBuilderName: fbn,
+				Prefix:           prefix,
+				Pointer:          field.Pointer,
+			})
+		case FieldKindStruct:
 			subFields, err := g.fields.FindFieldsByStruct(field.StructRef)
 			if err != nil {
 				return "", err
@@ -82,6 +91,8 @@ func (g *Generator) Generate(directory string, structName string, destination st
 				Pointer:          field.Pointer,
 				Fields:           subFields,
 			})
+		default:
+			fmt.Println("")
 		}
 	}
 
@@ -90,6 +101,7 @@ func (g *Generator) Generate(directory string, structName string, destination st
 	}
 
 	source := &FlagSource{
+		Struct:  st,
 		Package: pkg,
 		Blocks:  blocks,
 	}
