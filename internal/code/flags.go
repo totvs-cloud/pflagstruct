@@ -16,7 +16,7 @@ func (g *Generator) structFlags(st *projscan.Struct) (*orderedmap.OrderedMap[str
 
 	for _, fld := range flds {
 		switch KindOf(fld) {
-		case FieldKindNative, FieldKindTCloudTag:
+		case FieldKindNative, FieldKindTCloudTag, FieldKindStringMap:
 			fields, _ := refs.Get("")
 			refs.Set("", append(fields, fld))
 		case FieldKindStruct:
@@ -52,7 +52,7 @@ func (g *Generator) fieldFlags(field *projscan.Field, prefix string) (*orderedma
 
 	for _, fld := range flds {
 		switch KindOf(fld) {
-		case FieldKindNative, FieldKindTCloudTag:
+		case FieldKindNative, FieldKindTCloudTag, FieldKindStringMap:
 			fields, _ := refs.Get(prefix)
 			refs.Set(prefix, append(fields, fld))
 		case FieldKindStruct:
