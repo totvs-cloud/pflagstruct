@@ -148,6 +148,7 @@ func (g *PointerGetterCall) Flag() string {
 func (g *PointerGetterCall) Statement() *jen.Statement {
 	structName := changecase.Camel(g.Struct.Name)
 	fieldName := g.Field.Name
+	flagValue := "flagValue"
 
 	returnId := jen.Nil()
 	if !g.Pointer {
@@ -156,24 +157,43 @@ func (g *PointerGetterCall) Statement() *jen.Statement {
 
 	switch KindOf(g.Field) {
 	case FieldKindNative:
-		flagValue := "flagValue"
-		comparison := g.CompareToDefaultValue(jen.Id(flagValue).Op("!="))
-
 		return jen.If(jen.List(jen.Id(flagValue), jen.Err()).Op(":=").
 			Id("cf").Dot("flags").Dot(g.CobraMethod()).Call(jen.Lit(g.Flag())), jen.Err().Op("!=").Nil()).
 			Block(
 				jen.Return().List(returnId, jen.Qual("fmt", "Errorf").Call(jen.Lit("error retrieving \""+g.Flag()+"\" from command flags: %w"), jen.Err())),
-			).Else().If(comparison.Op("||").Id(structName).Op("==").Nil()).
+			).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!=")).Op("||").Id(structName).Op("==").Nil()).
 			Block(
 				jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id(flagValue)),
-			).Else().If(comparison).
+			).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!="))).
 			Block(
 				jen.Id(structName).Dot(fieldName).Op("=").Id(flagValue),
 			)
 	case FieldKindStruct, FieldKindTCloudTag, FieldKindStringMap:
-		return jen.If(jen.List(jen.Id(structName).Dot(fieldName), jen.Err()).Op("=").
-			Id("cf").Dot(changecase.Camel(path.Join("Get", g.Prefix, fieldName))).Call(), jen.Err().Op("!=").Nil()).
-			Block(jen.Return().List(returnId, jen.Err()))
+		if g.Field.Pointer {
+			return jen.If(jen.List(jen.Id(flagValue), jen.Err()).Op(":=").
+				Id("cf").Dot(changecase.Camel(path.Join("Get", g.Prefix, fieldName))).Call(), jen.Err().Op("!=").Nil()).
+				Block(
+					jen.Return().List(returnId, jen.Err()),
+				).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!=")).Op("||").Id(structName).Op("==").Nil()).
+				Block(
+					jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id(flagValue)),
+				).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!="))).
+				Block(
+					jen.Id(structName).Dot(fieldName).Op("=").Id(flagValue),
+				)
+		} else {
+			return jen.If(jen.List(jen.Id(flagValue), jen.Err()).Op(":=").
+				Id("cf").Dot(changecase.Camel(path.Join("Get", g.Prefix, fieldName))).Call(), jen.Err().Op("!=").Nil()).
+				Block(
+					jen.Return().List(returnId, jen.Err()),
+				).Else().If(jen.Id(structName).Op("==").Nil()).
+				Block(
+					jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id(flagValue)),
+				).Else().
+				Block(
+					jen.Id(structName).Dot(fieldName).Op("=").Id(flagValue),
+				)
+		}
 	}
 
 	return nil
