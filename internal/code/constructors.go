@@ -5,6 +5,7 @@ import (
 
 	"github.com/dave/jennifer/jen"
 	changecase "github.com/ku/go-change-case"
+
 	"github.com/totvs-cloud/pflagstruct/projscan"
 )
 
@@ -50,12 +51,20 @@ func (g *GetConstructor) Statement() *jen.Statement {
 		jen.Error(),
 	}
 
+	structName := changecase.Camel(g.Struct.Name)
 	methodCall := changecase.Camel(path.Join("get", g.Struct.Name))
 
 	return jen.Func().Id(g.MethodName()).Params(args...).Params(returns...).Block(
-		jen.Return().Parens(
-			jen.Op("&").Id(g.FlagsBuilderName).Values(jen.Id("flags").Op(":").Id("flags")),
-		).
-			Dot(methodCall).Call(),
+		jen.If(jen.List(jen.Id(structName),
+			jen.Id("err")).Op(":=").Parens(jen.Op("&").Id(g.FlagsBuilderName).Values(jen.Id("flags").Op(":").Id("flags"))).Dot(methodCall).Call(),
+			jen.Id("err").Op("!=").Nil()).
+			Block(
+				jen.Return().List(jen.Nil(), jen.Id("err")),
+			).Else().If(jen.Id(structName).Op("!=").Nil()).
+			Block(
+				jen.Return().List(jen.Id(structName), jen.Nil()),
+			),
+		jen.Return().List(jen.Id("new").Call(jen.Qual(g.Struct.Package.Path, g.Struct.Name)), jen.Nil()),
 	)
+
 }

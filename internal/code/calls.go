@@ -156,18 +156,19 @@ func (g *PointerGetterCall) Statement() *jen.Statement {
 
 	switch KindOf(g.Field) {
 	case FieldKindNative:
-		comparison := g.CompareToDefaultValue(jen.Id("flagValue").Op("!="))
+		flagValue := "flagValue"
+		comparison := g.CompareToDefaultValue(jen.Id(flagValue).Op("!="))
 
-		return jen.If(jen.List(jen.Id("flagValue"), jen.Err()).Op(":=").
+		return jen.If(jen.List(jen.Id(flagValue), jen.Err()).Op(":=").
 			Id("cf").Dot("flags").Dot(g.CobraMethod()).Call(jen.Lit(g.Flag())), jen.Err().Op("!=").Nil()).
 			Block(
 				jen.Return().List(returnId, jen.Qual("fmt", "Errorf").Call(jen.Lit("error retrieving \""+g.Flag()+"\" from command flags: %w"), jen.Err())),
 			).Else().If(comparison.Op("||").Id(structName).Op("==").Nil()).
 			Block(
-				jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id("flagValue")),
+				jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id(flagValue)),
 			).Else().If(comparison).
 			Block(
-				jen.Id(structName).Dot(fieldName).Op("=").Id("flagValue"),
+				jen.Id(structName).Dot(fieldName).Op("=").Id(flagValue),
 			)
 	case FieldKindStruct, FieldKindTCloudTag, FieldKindStringMap:
 		return jen.If(jen.List(jen.Id(structName).Dot(fieldName), jen.Err()).Op("=").
