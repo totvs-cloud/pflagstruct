@@ -7,6 +7,7 @@ import (
 
 	"github.com/dave/jennifer/jen"
 	changecase "github.com/ku/go-change-case"
+
 	"github.com/totvs-cloud/pflagstruct/projscan"
 )
 
@@ -122,4 +123,70 @@ func (g *GetterCall) Statement() *jen.Statement {
 	}
 
 	return nil
+}
+
+type PointerGetterCall struct {
+	Prefix  string
+	Struct  *projscan.Struct
+	Pointer bool
+	Field   *projscan.Field
+}
+
+func (g *PointerGetterCall) CobraMethod() string {
+	var suffix string
+	if g.Field.Array {
+		suffix = "Slice"
+	}
+
+	return changecase.Pascal(path.Join("get", g.Field.Type.String(), suffix))
+}
+
+func (g *PointerGetterCall) Flag() string {
+	return changecase.Param(path.Join(g.Prefix, g.Field.Name))
+}
+
+func (g *PointerGetterCall) Statement() *jen.Statement {
+	structName := changecase.Camel(g.Struct.Name)
+	fieldName := g.Field.Name
+
+	returnId := jen.Nil()
+	if !g.Pointer {
+		returnId = jen.Id(structName)
+	}
+
+	switch KindOf(g.Field) {
+	case FieldKindNative:
+		return jen.If(jen.List(jen.Id("flagValue"), jen.Err()).Op(":=").
+			Id("cf").Dot("flags").Dot(g.CobraMethod()).Call(jen.Lit(g.Flag())), jen.Err().Op("!=").Nil()).
+			Block(
+				jen.Return().List(returnId, jen.Qual("fmt", "Errorf").Call(jen.Lit("error retrieving \""+g.Flag()+"\" from command flags: %w"), jen.Err())),
+			).Else().If(jen.Id("flagValue").Op("!=").Lit(g.DefaultValue()).Op("||").Id(structName).Op("==").Id("nil")).
+			Block(
+				jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id("flagValue")),
+			).Else().If(jen.Id("flagValue").Op("!=").Lit(g.DefaultValue())).
+			Block(
+				jen.Id(structName).Dot(fieldName).Op("=").Id("flagValue"),
+			)
+	case FieldKindStruct, FieldKindTCloudTag, FieldKindStringMap:
+		return jen.If(jen.List(jen.Id(structName).Dot(fieldName), jen.Err()).Op("=").
+			Id("cf").Dot(changecase.Camel(path.Join("Get", g.Prefix, fieldName))).Call(), jen.Err().Op("!=").Nil()).
+			Block(jen.Return().List(returnId, jen.Err()))
+	}
+
+	return nil
+}
+
+func (g *PointerGetterCall) DefaultValue() any {
+	switch g.Field.Type {
+	case projscan.FieldTypeString:
+		return ""
+	case projscan.FieldTypeBool:
+		return false
+	case projscan.FieldTypeFloat32, projscan.FieldTypeFloat64:
+		return 0.0
+	case projscan.FieldTypeInt, projscan.FieldTypeInt8, projscan.FieldTypeInt16, projscan.FieldTypeInt32, projscan.FieldTypeInt64:
+		return 0
+	default:
+		return nil
+	}
 }

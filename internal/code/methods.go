@@ -7,6 +7,7 @@ import (
 
 	"github.com/dave/jennifer/jen"
 	changecase "github.com/ku/go-change-case"
+
 	"github.com/totvs-cloud/pflagstruct/projscan"
 )
 
@@ -55,16 +56,6 @@ func (g *GetterMethod) MethodName() string {
 	return changecase.Camel(path.Join("Get", g.Prefix))
 }
 
-func (g *GetterMethod) Initialization() *jen.Statement {
-	if !g.Pointer {
-		return nil
-	}
-
-	id := jen.Id(changecase.Camel(g.Struct.Name))
-
-	return id.Op("=").Id("new").Call(jen.Qual(g.Struct.Package.Path, g.Struct.Name))
-}
-
 func (g *GetterMethod) ReturnType() *jen.Statement {
 	id := jen.Id(changecase.Camel(g.Struct.Name))
 	if g.Pointer {
@@ -84,14 +75,26 @@ func (g *GetterMethod) Statement() *jen.Statement {
 		g.ReturnType(), jen.Id("err").Id("error"),
 	}
 
-	calls := []jen.Code{g.Initialization()}
-	for _, field := range g.Fields {
-		calls = append(calls, (&GetterCall{
-			Prefix:  g.Prefix,
-			Struct:  g.Struct,
-			Pointer: g.Pointer,
-			Field:   field,
-		}).Statement())
+	calls := make([]jen.Code, 0, len(g.Fields))
+
+	if g.Pointer {
+		for _, field := range g.Fields {
+			calls = append(calls, (&PointerGetterCall{
+				Prefix:  g.Prefix,
+				Struct:  g.Struct,
+				Pointer: g.Pointer,
+				Field:   field,
+			}).Statement())
+		}
+	} else {
+		for _, field := range g.Fields {
+			calls = append(calls, (&GetterCall{
+				Prefix:  g.Prefix,
+				Struct:  g.Struct,
+				Pointer: g.Pointer,
+				Field:   field,
+			}).Statement())
+		}
 	}
 
 	calls = append(calls, g.ReturnCall())
