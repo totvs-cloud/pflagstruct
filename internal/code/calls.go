@@ -156,14 +156,16 @@ func (g *PointerGetterCall) Statement() *jen.Statement {
 
 	switch KindOf(g.Field) {
 	case FieldKindNative:
+		comparison := g.CompareToDefaultValue(jen.Id("flagValue").Op("!="))
+
 		return jen.If(jen.List(jen.Id("flagValue"), jen.Err()).Op(":=").
 			Id("cf").Dot("flags").Dot(g.CobraMethod()).Call(jen.Lit(g.Flag())), jen.Err().Op("!=").Nil()).
 			Block(
 				jen.Return().List(returnId, jen.Qual("fmt", "Errorf").Call(jen.Lit("error retrieving \""+g.Flag()+"\" from command flags: %w"), jen.Err())),
-			).Else().If(jen.Id("flagValue").Op("!=").Lit(g.DefaultValue()).Op("||").Id(structName).Op("==").Id("nil")).
+			).Else().If(comparison.Op("||").Id(structName).Op("==").Nil()).
 			Block(
 				jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id("flagValue")),
-			).Else().If(jen.Id("flagValue").Op("!=").Lit(g.DefaultValue())).
+			).Else().If(comparison).
 			Block(
 				jen.Id(structName).Dot(fieldName).Op("=").Id("flagValue"),
 			)
@@ -176,17 +178,21 @@ func (g *PointerGetterCall) Statement() *jen.Statement {
 	return nil
 }
 
-func (g *PointerGetterCall) DefaultValue() any {
+func (g *PointerGetterCall) CompareToDefaultValue(statement *jen.Statement) *jen.Statement {
+	if g.Field.Array {
+		return statement.Nil()
+	}
+
 	switch g.Field.Type {
 	case projscan.FieldTypeString:
-		return ""
+		return statement.Lit("")
 	case projscan.FieldTypeBool:
-		return false
+		return statement.False()
 	case projscan.FieldTypeFloat32, projscan.FieldTypeFloat64:
-		return 0.0
+		return statement.Lit(0.0)
 	case projscan.FieldTypeInt, projscan.FieldTypeInt8, projscan.FieldTypeInt16, projscan.FieldTypeInt32, projscan.FieldTypeInt64:
-		return 0
+		return statement.Lit(0)
 	default:
-		return nil
+		return statement.Nil()
 	}
 }
