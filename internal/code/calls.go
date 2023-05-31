@@ -161,7 +161,7 @@ func (g *PointerGetterCall) Statement() *jen.Statement {
 			Id("cf").Dot("flags").Dot(g.CobraMethod()).Call(jen.Lit(g.Flag())), jen.Err().Op("!=").Nil()).
 			Block(
 				jen.Return().List(returnId, jen.Qual("fmt", "Errorf").Call(jen.Lit("error retrieving \""+g.Flag()+"\" from command flags: %w"), jen.Err())),
-			).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!=")).Op("||").Id(structName).Op("==").Nil()).
+			).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!=")).Op("&&").Id(structName).Op("==").Nil()).
 			Block(
 				jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id(flagValue)),
 			).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!="))).
@@ -174,7 +174,7 @@ func (g *PointerGetterCall) Statement() *jen.Statement {
 				Id("cf").Dot(changecase.Camel(path.Join("Get", g.Prefix, fieldName))).Call(), jen.Err().Op("!=").Nil()).
 				Block(
 					jen.Return().List(returnId, jen.Err()),
-				).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!=")).Op("||").Id(structName).Op("==").Nil()).
+				).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!=")).Op("&&").Id(structName).Op("==").Nil()).
 				Block(
 					jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id(flagValue)),
 				).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!="))).
