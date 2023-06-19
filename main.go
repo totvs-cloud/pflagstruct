@@ -12,13 +12,14 @@ import (
 	"github.com/lmittmann/tint"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slog"
+
 	"github.com/totvs-cloud/pflagstruct/internal/code"
 	scanfld "github.com/totvs-cloud/pflagstruct/internal/scan/fld"
 	scanpkg "github.com/totvs-cloud/pflagstruct/internal/scan/pkg"
 	scanproj "github.com/totvs-cloud/pflagstruct/internal/scan/proj"
 	scanst "github.com/totvs-cloud/pflagstruct/internal/scan/st"
 	"github.com/totvs-cloud/pflagstruct/internal/syntree"
-	"golang.org/x/exp/slog"
 )
 
 var (
@@ -107,13 +108,13 @@ func fatal(err error) {
 }
 
 func main() {
-	options := tint.Options{TimeFormat: time.Kitchen}
+	options := &tint.Options{TimeFormat: time.Kitchen}
 	if debug {
 		options.AddSource = true
 		options.Level = slog.LevelDebug
 	}
 
-	slog.SetDefault(slog.New(options.NewHandler(os.Stderr)))
+	slog.SetDefault(slog.New(tint.NewHandler(os.Stderr, options)))
 
 	cmd, err := NewCommand()
 	if err != nil {
