@@ -107,6 +107,7 @@ type TagsGetterMethod struct {
 	Prefix           string
 	Struct           *projscan.Struct
 	Pointer          bool
+	ArrayPointer     bool
 }
 
 func (t *TagsGetterMethod) MethodName() string {
@@ -149,10 +150,6 @@ func (t *TagsGetterMethod) Flag() string {
 
 func (t *TagsGetterMethod) Statement() *jen.Statement {
 	receiver := jen.Id("cf").Op("*").Id(t.FlagsBuilderName)
-	returns := []jen.Code{
-		jen.Index().Op("*").Qual(t.Struct.Package.Path, t.Struct.Name),
-		jen.Error(),
-	}
 
 	calls := []jen.Code{
 		jen.List(jen.Id("tagStrList"), jen.Id("err")).Op(":=").Id("cf").Dot("flags").Dot("GetStringSlice").Call(jen.Lit(t.Flag())),
@@ -167,7 +164,21 @@ func (t *TagsGetterMethod) Statement() *jen.Statement {
 				t.ResultAssignment().Values(jen.Id("Name").Op(":").Id("parts").Index(jen.Lit(0)), jen.Id("Value").Op(":").Id("parts").Index(jen.Lit(1))))),
 	}
 
-	calls = append(calls, jen.Return().List(jen.Id("resultingTags"), jen.Nil()))
+	var returns []jen.Code
+	if !t.ArrayPointer {
+		returns = []jen.Code{
+			jen.Index().Op("*").Qual(t.Struct.Package.Path, t.Struct.Name),
+			jen.Error(),
+		}
+
+		calls = append(calls, jen.Return().List(jen.Id("resultingTags"), jen.Nil()))
+	} else {
+		returns = []jen.Code{
+			jen.Op("*").Index().Op("*").Qual(t.Struct.Package.Path, t.Struct.Name),
+			jen.Error(),
+		}
+		calls = append(calls, jen.Return().List(jen.Op("&").Id("resultingTags"), jen.Nil()))
+	}
 
 	return jen.Func().Params(receiver).Id(t.MethodName()).Params().Params(returns...).Block(calls...)
 }

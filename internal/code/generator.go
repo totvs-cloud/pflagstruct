@@ -5,6 +5,7 @@ import (
 	"path"
 
 	changecase "github.com/ku/go-change-case"
+
 	"github.com/totvs-cloud/pflagstruct/internal/dir"
 	"github.com/totvs-cloud/pflagstruct/projscan"
 )
@@ -71,6 +72,7 @@ func (g *Generator) Generate(directory string, structName string, destination st
 				Prefix:           prefix,
 				Struct:           field.StructRef,
 				Pointer:          field.Pointer,
+				ArrayPointer:     field.ArrayPointer,
 			})
 		case FieldKindStringMap:
 			getterMethods = append(getterMethods, &MapGetterMethod{

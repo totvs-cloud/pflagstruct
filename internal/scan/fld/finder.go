@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
 	"github.com/totvs-cloud/pflagstruct/internal/syntree"
 	"github.com/totvs-cloud/pflagstruct/projscan"
 )
@@ -62,33 +63,36 @@ func (f *Finder) buildField(expr ast.Expr, st *projscan.Struct, proj *projscan.P
 	case *ast.StarExpr:
 		// it means that the field type is a pointer
 		return f.buildField(x.X, st, proj, &projscan.Field{
-			Name:      field.Name,
-			Type:      field.Type,
-			Doc:       field.Doc,
-			StructRef: field.StructRef,
-			Pointer:   true,
-			Array:     field.Array,
+			Name:         field.Name,
+			Type:         field.Type,
+			Doc:          field.Doc,
+			StructRef:    field.StructRef,
+			Pointer:      true,
+			Array:        field.Array,
+			ArrayPointer: field.ArrayPointer,
 		})
 	case *ast.ArrayType:
 		// it means that the field type is an array
 		return f.buildField(x.Elt, st, proj, &projscan.Field{
-			Name:      field.Name,
-			Type:      field.Type,
-			Doc:       field.Doc,
-			StructRef: field.StructRef,
-			Pointer:   field.Pointer,
-			Array:     true,
+			Name:         field.Name,
+			Type:         field.Type,
+			Doc:          field.Doc,
+			StructRef:    field.StructRef,
+			Pointer:      false,
+			Array:        true,
+			ArrayPointer: field.Pointer,
 		})
 	case *ast.Ident:
 		// it means that the field type is either a built-in type or a struct from the same package
 		if projscan.FieldType(x.Name).IsValid() {
 			return &projscan.Field{
-				Name:      field.Name,
-				Type:      projscan.FieldType(x.Name),
-				Doc:       field.Doc,
-				StructRef: field.StructRef,
-				Pointer:   field.Pointer,
-				Array:     field.Array,
+				Name:         field.Name,
+				Type:         projscan.FieldType(x.Name),
+				Doc:          field.Doc,
+				StructRef:    field.StructRef,
+				Pointer:      field.Pointer,
+				Array:        field.Array,
+				ArrayPointer: field.ArrayPointer,
 			}, nil
 		}
 
@@ -98,12 +102,13 @@ func (f *Finder) buildField(expr ast.Expr, st *projscan.Struct, proj *projscan.P
 		}
 
 		return &projscan.Field{
-			Name:      field.Name,
-			Type:      projscan.FieldType(x.Name),
-			Doc:       field.Doc,
-			StructRef: structRef,
-			Pointer:   field.Pointer,
-			Array:     field.Array,
+			Name:         field.Name,
+			Type:         projscan.FieldType(x.Name),
+			Doc:          field.Doc,
+			StructRef:    structRef,
+			Pointer:      field.Pointer,
+			Array:        field.Array,
+			ArrayPointer: field.ArrayPointer,
 		}, nil
 	case *ast.SelectorExpr:
 		// it means that the field type is a struct from another package
@@ -124,47 +129,51 @@ func (f *Finder) buildField(expr ast.Expr, st *projscan.Struct, proj *projscan.P
 			}
 
 			return &projscan.Field{
-				Name:      field.Name,
-				Type:      projscan.FieldType(fmt.Sprintf("%s.%s", pkg.Name, x.Sel.Name)),
-				Doc:       field.Doc,
-				StructRef: structRef,
-				Pointer:   field.Pointer,
-				Array:     field.Array,
+				Name:         field.Name,
+				Type:         projscan.FieldType(fmt.Sprintf("%s.%s", pkg.Name, x.Sel.Name)),
+				Doc:          field.Doc,
+				StructRef:    structRef,
+				Pointer:      field.Pointer,
+				Array:        field.Array,
+				ArrayPointer: field.ArrayPointer,
 			}, nil
 		}
 	case *ast.MapType:
 		// it means that the field type is a map
 		key, err := f.buildField(x.Key, st, proj, &projscan.Field{
-			Name:      field.Name,
-			Type:      "",
-			Doc:       field.Doc,
-			StructRef: nil,
-			Pointer:   false,
-			Array:     false,
+			Name:         field.Name,
+			Type:         "",
+			Doc:          field.Doc,
+			StructRef:    nil,
+			Pointer:      false,
+			Array:        false,
+			ArrayPointer: false,
 		})
 		if err != nil {
 			return nil, err
 		}
 
 		value, err := f.buildField(x.Value, st, proj, &projscan.Field{
-			Name:      field.Name,
-			Type:      "",
-			Doc:       field.Doc,
-			StructRef: nil,
-			Pointer:   false,
-			Array:     false,
+			Name:         field.Name,
+			Type:         "",
+			Doc:          field.Doc,
+			StructRef:    nil,
+			Pointer:      false,
+			Array:        false,
+			ArrayPointer: false,
 		})
 		if err != nil {
 			return nil, err
 		}
 
 		return &projscan.Field{
-			Name:      field.Name,
-			Type:      projscan.FieldType(fmt.Sprintf("map[%s]%s", key.Type, value.Type)),
-			Doc:       field.Doc,
-			StructRef: field.StructRef,
-			Pointer:   field.Pointer,
-			Array:     field.Array,
+			Name:         field.Name,
+			Type:         projscan.FieldType(fmt.Sprintf("map[%s]%s", key.Type, value.Type)),
+			Doc:          field.Doc,
+			StructRef:    field.StructRef,
+			Pointer:      field.Pointer,
+			Array:        field.Array,
+			ArrayPointer: field.ArrayPointer,
 		}, nil
 	}
 

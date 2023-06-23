@@ -157,16 +157,25 @@ func (g *PointerGetterCall) Statement() *jen.Statement {
 
 	switch KindOf(g.Field) {
 	case FieldKindNative:
+		var assigment1, assigment2 *jen.Statement
+		if !g.Field.Pointer {
+			assigment1 = jen.Id(fieldName).Op(":").Id(flagValue)
+			assigment2 = jen.Id(structName).Dot(fieldName).Op("=").Id(flagValue)
+		} else {
+			assigment1 = jen.Id(fieldName).Op(":").Op("&").Id(flagValue)
+			assigment2 = jen.Id(structName).Dot(fieldName).Op("=").Op("&").Id(flagValue)
+		}
+
 		return jen.If(jen.List(jen.Id(flagValue), jen.Err()).Op(":=").
 			Id("cf").Dot("flags").Dot(g.CobraMethod()).Call(jen.Lit(g.Flag())), jen.Err().Op("!=").Nil()).
 			Block(
 				jen.Return().List(returnId, jen.Qual("fmt", "Errorf").Call(jen.Lit("error retrieving \""+g.Flag()+"\" from command flags: %w"), jen.Err())),
 			).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!=")).Op("&&").Id(structName).Op("==").Nil()).
 			Block(
-				jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(jen.Id(fieldName).Op(":").Id(flagValue)),
+				jen.Id(structName).Op("=").Op("&").Qual(g.Struct.Package.Path, g.Struct.Name).Values(assigment1),
 			).Else().If(g.CompareToDefaultValue(jen.Id(flagValue).Op("!="))).
 			Block(
-				jen.Id(structName).Dot(fieldName).Op("=").Id(flagValue),
+				assigment2,
 			)
 	case FieldKindStruct, FieldKindTCloudTag, FieldKindStringMap:
 		if g.Field.Pointer {
