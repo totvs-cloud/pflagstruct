@@ -1,5 +1,9 @@
 # pflagstruct
 
+> [!WARNING]  
+> **Update, June 2024**: _This repo and tool are no longer maintained.
+> Please see [github.com/cloud104/pflagstruct](https://github.com/cloud104/pflagstruct) for a maintained fork instead._
+
 [![License](https://img.shields.io/github/license/saltstack/salt)](https://opensource.org/license/apache-2-0/)
 
 A code generation tool that simplifies the process of registering command line flags in Go applications
